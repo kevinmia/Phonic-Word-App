@@ -1,0 +1,235 @@
+/*
+ * Created by Miao on 3/18/14.
+ */
+var lines = new Array();
+var lines2 = new Array()
+var soundCodes = new Array();
+var ipa = new Array();
+var soundLetters = new Array();
+var allSounds = new Array();
+var matchingLetters = new Array();
+var selectedLetters = new Array();
+var ipaMatch = new Array();
+var soundMatch = new Array();
+var wordMatch = new Array();
+var patterns = new Array();
+var uniqueLetters = new Array();
+var ipaFlag = true;
+
+// angularjs directive that resets the button after searching is finished
+var app = angular.module('angularjs-starter', [])
+    .directive('mySearchDirective', function() {
+    return function(scope, element, attrs) {
+        if (scope.$last){
+            $('button[data-loading-text]').button('reset');
+        }
+    };
+});
+
+// set up controller
+app.controller('gpcCtrl', function($scope) {
+    $(document).ready(function() {
+
+        // load SoundList.txt and create the list for all sound patterns when document is ready
+        $.get('SoundList.txt', function(data) {
+            lines = data.split('\n');
+            lines.forEach(function(value) {
+                soundLetters.push(value.substring(0,value.indexOf("[")));
+                allSounds.push(value.substring(value.indexOf("[")+1,value.indexOf("]")));
+            });
+
+            // only use unique letters
+            uniqueLetters = [];
+            $.each(soundLetters, function(i, el){
+                if($.inArray(el, uniqueLetters) === -1) uniqueLetters.push(el);
+            });
+
+            $scope.addPatterns();
+        }, 'text');
+
+        // load Sound_IPA_List.txt and create the lists for all sound codes and IPAs when document is ready
+        $.get('Sound_IPA_List.txt', function(data) {
+            lines2 = data.split('\n');
+            lines2.forEach(function(value) {
+                var split = value.split("\t");
+                soundCodes.push({code:split[0], one:split[1], two:split[2], three:split[3], four: split[4], five:split[5]});
+                ipa.push({code:split[0], one:split[6], two:split[7], three:split[8]});
+            });
+        }, 'text');
+
+        // search by IPA or Sound Code, activates one button and inactivates the other
+        $("#gpcs > #gpc").click(function(){
+            $("#gpcs > #gpc").removeClass("active");
+            $(this).addClass("active");
+        });
+    });
+
+    $scope.listLength = 0;
+    $scope.patterns = ["'", "+", "_", "a", "aa", "ae", "ah", "ai", "ais", "ait", "al", "alf", "anc", "and", "ang"];
+    $scope.wordMatch = [{word:" "}, {word:" "}, {word:" "}, {word:" "}, {word:" "}, {word:" "}, {word:" "}, {word:" "}, {word:" "}];
+    $scope.matchingLetters = [];
+    $scope.ipaMatch = [];
+    $scope.soundMatch = [];
+    $scope.sounds = [];
+    $scope.selectedLetters = [];
+    var matchingLetters = [];
+    var ipaMatch = [];
+    var soundMatch = [];
+
+    // ng-repeat grid
+    $scope.rows = [];
+    var maxRows = 3;
+    var maxCols = 3;
+    var count = 0;
+    for( var i =0 ; i < maxRows;i++){
+        $scope.rows.push([]);
+        for( var j =0 ; j < maxCols;j++){
+            count++;
+            $scope.rows[i][j] = $scope.patterns[count];
+        }
+    }
+
+    /*
+     * add letter patterns
+     */
+    $scope.addPatterns = function() {
+        if (uniqueLetters.length > 2) {
+            $scope.patterns = uniqueLetters;
+        }
+    };
+
+    /*
+     * option to choose IPA or Sound Code
+     */
+    $scope.choosePattern = function(clickEvent) {
+        matchingLetters = [];
+
+        lines.forEach(function(value, index) {
+
+            if (clickEvent.target.innerText == soundLetters[index]) {
+                matchingLetters.push({code:clickEvent.target.innerText, gpc:value.substring(value.indexOf("[")+1,value.indexOf("]"))});
+            }
+        });
+
+        matchingLetters.forEach(function(value, index) {
+            ipa.forEach(function(v, i) {
+                if (value.gpc == v.code && value.gpc != "") {
+                    ipaMatch[index] = {code:value.code, sound:"/"+ String.fromCharCode(parseInt(v.one, 16)) + String.fromCharCode(parseInt(v.two, 16)) + String.fromCharCode(parseInt(v.three, 16))+"/", gpc:value.code+"["+value.gpc+"]"};
+                }
+
+                if (value.gpc == "") {
+                    ipaMatch[index] = {code:value.code, sound: "/ /", gpc:value.code+"["+value.gpc+"]"};
+                }
+            });
+
+            soundCodes.forEach(function(v, i) {
+                if (value.gpc == v.code && value.gpc != "") {
+                    soundMatch[index] = {code:value.code, sound:"/"+ String.fromCharCode(parseInt(v.one, 16)) + String.fromCharCode(parseInt(v.two, 16)) + String.fromCharCode(parseInt(v.three, 16)) + String.fromCharCode(parseInt(v.four, 16)) + String.fromCharCode(parseInt(v.five, 16)) + "/", gpc:value.code+"["+value.gpc+"]"};
+                }
+
+                if (value.gpc == "") {
+                    soundMatch[index] = {code:value.code, sound: "/ /", gpc:value.code+"["+value.gpc+"]"};
+                }
+            });
+        });
+
+        if (ipaFlag) {
+            $scope.sounds = ipaMatch;
+        } else {
+            $scope.sounds = soundMatch;
+        }
+    }
+
+    /*
+     * add and display IPAs
+     */
+    $scope.addIPAs = function(){
+        ipaFlag = true;
+        $scope.sounds = ipaMatch;
+    };
+
+    /*
+     * add and display Sound Codes
+     */
+    $scope.addSoundCodes = function() {
+        ipaFlag = false;
+        $scope.sounds = soundMatch;
+    }
+
+    /*
+     * add selected sound spellings
+     */
+    $scope.addSelected = function(clickedEvent){
+        var sel = clickedEvent.target.id.split(' ');
+        var flag = true;
+
+        if ($scope.selectedLetters.length == 0) {
+            if (flag && (sel[1] == "/")) {
+                $scope.selectedLetters.push({display:sel[0] + " = / /", gpc:sel[3]});
+            } else {
+                $scope.selectedLetters.push({display:sel[0] + " = " + sel[1], gpc:sel[2]});
+            }
+        } else {
+            for (var i = 0; i < $scope.selectedLetters.length; i++) {
+                if ($scope.selectedLetters[i].gpc.indexOf(sel[2]) > -1) {
+                    flag = false;
+                }
+
+                if (sel[1] == "/") {
+                    if ($scope.selectedLetters[i].gpc.indexOf(sel[3]) > -1) {
+                        flag = false;
+                    }
+                }
+            }
+
+            if (flag && (sel[1] == "/")) {
+                $scope.selectedLetters.push({display:sel[0] + " = / /", gpc:sel[3]});
+            } else if (flag) {
+                $scope.selectedLetters.push({display:sel[0] + " = " + sel[1], gpc:sel[2]});
+            }
+        }
+
+        selectedLetters = $scope.selectedLetters;
+    };
+
+    /*
+     * remove selected sound spelling
+     */
+    $scope.removeSelected = function(clickedEvent){
+        for (var i = 0; i < $scope.selectedLetters.length; i++) {
+            if (clickedEvent.target.id.indexOf($scope.selectedLetters[i].gpc) > -1) {
+                selectedLetters.splice(i,1);
+                break;
+            }
+        }
+
+        $scope.selectedLetters = selectedLetters;
+    };
+
+    /*
+     * search word list
+     */
+    $scope.searchWords = function(){
+        $scope.listLength = wordMatch.length;
+        if (wordMatch.length < 9) {
+            for (var i = 0; i < 9; i++) {
+                if (typeof wordMatch[i] === 'undefined') {
+                    wordMatch.push({word:" "});
+                }
+            }
+        }
+
+        $scope.wordMatch = wordMatch;
+    };
+
+    /*
+     * returns the count of words in the word list
+     */
+    $scope.matchLength = function() {
+        if ($scope.wordMatch[0].word == "Select one or more IPA codes" || $scope.wordMatch[0].word == "No results found") {
+            return 0;
+        } else {
+            return $scope.listLength;
+        }
+    }
+});

@@ -1,0 +1,170 @@
+<!doctype html>
+<html ng-app="angularjs-starter">
+<head>
+    <meta charset="utf-8">
+    <title>Phonic Word App</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="styles.css"/>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.5/angular.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="createWordList.js"></script>
+    <script src="matchingLetter.js"></script>
+    <!-- Google Analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-49825662-1', 'devinkearns.org');
+        ga('send', 'pageview');
+    </script>
+    <!-- End Google Analytics -->
+</head>
+<body>
+<div class="container">
+    <div ng-controller="gpcCtrl">
+        <!--Latter pattern filter-->
+        <form class="navbar-form navbar-left" role="search">
+            <span class="glyphicon glyphicon-search"></span>
+            <div class="form-group">
+                <input type="text" class="form-control input-sm" ng-model="searchPatterns" placeholder="Letter Pattern Search">
+            </div>
+        </form>
+        <br><br>
+        <!--Searching options-->
+        <table width="100%">
+            <!--Select letter pattern-->
+            <tr height="40">
+                <td align="right" width="200" id="type"><button type="button" class="btn btn-primary btn-sm">Letter Pattern</button></td>
+                <td width="30"></td>
+                <td width="800">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-warning" ng-repeat="pattern in patterns | filter:searchPatterns | limitTo:15" ng-click="choosePattern($event)">{{pattern}}</button>
+                    </div>
+                </td>
+                <td></td>
+            </tr>
+            <!--Select phoneme-->
+            <tr height="40">
+                <!--Select IPA or Sound Code-->
+                <td align="right">
+                    <div class="btn-group btn-group-sm" id="gpcs">
+                        <button type="button" id="gpc" class="btn btn-primary active btn-sm" ng-click=" addIPAs()">IPA</button>
+                        <button type="button" id="gpc" class="btn btn-primary btn-sm" ng-click="addSoundCodes()">Sound Code</button>
+                    </div>
+                </td>
+                <td width="30"></td>
+                <td width="800">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-info" id="{{sound.code}} {{sound.sound}} {{sound.gpc}}" ng-repeat="sound in sounds" ng-click="addSelected($event)">&nbsp{{sound.sound}}&nbsp</button>
+                    </div>
+                </td>
+                <!--Search button-->
+                <td>
+                    <button type="button" class="btn btn-primary btn-lg" id="searching" data-loading-text="Searching..." onclick="searchWordList(selectedLetters)" ng-click="searchWords()">Search</button>
+                </td>
+            </tr>
+            <!--Selected sound spellings-->
+            <tr height="40">
+                <td align="right"><button type="button" id="type" class="btn btn-primary btn-sm">Sound Spellings Selected</button></td>
+                <td width="30"></td>
+                <td width="800">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-success" id="{{selectedLetter}}" ng-repeat="selectedLetter in selectedLetters" ng-click="removeSelected($event)">{{selectedLetter.display}}    <span class="glyphicon glyphicon-remove"></span></button>
+                    </div>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+        <h2>Word List</h2>
+
+        <!--Max syllables/letters-->
+        <table>
+            <tr>
+                <td>
+                <b>Max Syllables</b>
+                </td>
+                <td>
+                <div class="btn-group btn-group-xs" id="sylgroup">
+                    <button type="button" class="btn btn-default" id="syl" value="1">1</button>
+                    <button type="button" class="btn btn-default" id="syl" value="2">2</button>
+                    <button type="button" class="btn btn-default" id="syl" value="3">3</button>
+                    <button type="button" class="active btn btn-default" id="syl" value="4">4</button>
+                    <button type="button" class="btn btn-default" id="syl" value="5">5</button>
+                    <button type="button" class="btn btn-default" id="syl" value="6">6</button>
+                    <button type="button" class="btn btn-default" id="syl" value="7">7</button>
+                    <button type="button" class="btn btn-default" id="syl" value="8">8</button>
+                    <button type="button" class="btn btn-default" id="syl" value="9">9</button>
+                    <button type="button" class="btn btn-default" id="syl" value="10">10</button>
+                </div>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <b>Max Letters</b>&nbsp&nbsp&nbsp
+                </td>
+                <td width="75%">
+                    <div class="btn-group btn-group-xs" id="letgroup">
+                        <button type="button" class="btn btn-default" id="let" value="2">2</button>
+                        <button type="button" class="btn btn-default" id="let" value="3">3</button>
+                        <button type="button" class="btn btn-default" id="let" value="4">4</button>
+                        <button type="button" class="btn btn-default" id="let" value="5">5</button>
+                        <button type="button" class="btn btn-default" id="let" value="6">6</button>
+                        <button type="button" class="btn btn-default" id="let" value="7">7</button>
+                        <button type="button" class="btn btn-default" id="let" value="8">8</button>
+                        <button type="button" class="btn btn-default" id="let" value="9">9</button>
+                        <button type="button" class="active btn btn-default" id="let" value="10">10</button>
+                        <button type="button" class="btn btn-default" id="let" value="11">11</button>
+                        <button type="button" class="btn btn-default" id="let" value="12">12</button>
+                        <button type="button" class="btn btn-default" id="let" value="13">13</button>
+                        <button type="button" class="btn btn-default" id="let" value="14">14</button>
+                        <button type="button" class="btn btn-default" id="let" value="15">15</button>
+                        <button type="button" class="btn btn-default" id="let" value="16">16</button>
+                        <button type="button" class="btn btn-default" id="let" value="17">17</button>
+                        <button type="button" class="btn btn-default" id="let" value="18">18</button>
+                        <button type="button" class="btn btn-default" id="let" value="19">19</button>
+                        <button type="button" class="btn btn-default" id="let" value="20">20</button>
+                        <button type="button" class="btn btn-default" id="let" value="21">21</button>
+                        <button type="button" class="btn btn-default" id="let" value="22">22</button>
+                        <button type="button" class="btn btn-default" id="let" value="23">23</button>
+                        <button type="button" class="btn btn-default" id="let" value="24">24</button>
+                        <button type="button" class="btn btn-default" id="let" value="25">25</button>
+                        <button type="button" class="btn btn-default" id="let" value="26">26</button>
+                        <button type="button" class="btn btn-default" id="let" value="27">27</button>
+                        <button type="button" class="btn btn-default" id="let" value="28">28</button>
+                    </div>
+                </td>
+                <td>
+                    <form class="navbar-form navbar-left" role="search">
+                        <div class="form-group">
+                            <input type="text" class="form-control input-sm" ng-model="searchList" placeholder="Filter Words">
+                        </div>
+                    </form>
+                </td>
+            </tr>
+        </table>
+        <!--Word list-->
+        <div class="panel panel-default">
+            <pre><div id="panel" class="panel-heading"><a href="#" ng-click="sortAlpha()"><b>Alphabetical</b></a><span id="alphasort"></span>                                                                                                                                   <a href="#" ng-click="sortFreq()"><b>Frequency</b></a><span id="freqsort" class="glyphicon glyphicon-arrow-down"></span></div></pre>
+            <ul class="list-group" id="list">
+                <pre><li class="list-group-item" ng-repeat="words in wordMatch | filter:searchList" my-search-directive>{{words.word}}   {{words.phonic}}<span class="badge">{{words.freq}}</span></li></pre>
+            </ul>
+        </div>
+        <!--Word count and footer-->
+        <table>
+            <tr>
+                <td width=25%>
+                    <b>Word Count:</b> {{matchLength()}}
+                </td>
+                <td width="60%" align="right">
+                    © 2014, Devin Kearns and Kevin Miao. This website is for non-commercial use only. <a href="mailto:devin.kearns@gmail.com" target="_top">Contact us</a> with questions or suggestions.
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+</body>
+</html>
